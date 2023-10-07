@@ -1,6 +1,6 @@
 from django.db import models
-from users.models import User
 
+from users.models import User
 
 NULLABLE = {'null': True, 'blank': True}
 
@@ -15,9 +15,9 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+
+
 # Create your models here.
-
-
 class Product(models.Model):
     name = models.CharField(max_length=100, verbose_name='Наименование')
     description = models.TextField(verbose_name='Описание', **NULLABLE)
@@ -50,13 +50,13 @@ class Contacts(models.Model):
 
 
 class Version(models.Model):
-    product_version = models.ForeignKey(Product, verbose_name='Продукт', on_delete=models.CASCADE, related_name='versions')
+    product = models.ForeignKey(Product, verbose_name='Продукт', on_delete=models.CASCADE, related_name='versions')
     number_version = models.PositiveIntegerField(verbose_name='Номер версии')
     name_version = models.CharField(max_length=100, verbose_name='Имя версии')
     current_version = models.BooleanField(verbose_name='Текущая версия', default=False)
 
     def __str__(self):
-        return f"{self.product_version} - {self.name_version}"
+        return f"{self.product} - {self.name_version}"
 
     class Meta:
         verbose_name = 'Версия'

@@ -1,9 +1,11 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import inlineformset_factory
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import TemplateView, DetailView, CreateView, UpdateView, DeleteView
-
-from catalog.forms import ProductForm, VersionForm, CategoryForm
+from catalog.forms import ProductForm, VersionForm, ContactForm
 from catalog.models import *
+from catalog.services import categories_get_cache, send_message_mail
 
 
 class CatalogView(TemplateView):
@@ -15,23 +17,34 @@ class CatalogView(TemplateView):
         return context
 
 
-class ContactsView(TemplateView):
+class ContactsView(CreateView):
+    model = Contacts
+    form_class = ContactForm
     template_name = 'catalog/contacts.html'
+    success_url = reverse_lazy('home')
+
+    def form_valid(self, form):
+        obj = form.save()
+        send_message_mail(obj)
+        return super().form_valid(form)
+
+
+def categories(request):
+    category_list = categories_get_cache()
+    return render(request, 'catalog/categories.html', {'object_list': category_list})
+
+
+class CategoryDetailView(DetailView):
+    model = Category
+    template_name = 'catalog/category.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['contacts'] = Contacts.objects.get(pk=1)
+        context['products'] = Product.objects.filter(category=self.kwargs['pk'])
         return context
 
 
-class CategoryCreateView(CreateView):
-    model = Category
-    form_class = CategoryForm
-    template_name = 'catalog/category_create.html'
-    success_url = reverse_lazy('home')
-
-
-class ProductCreateView(CreateView):
+class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_create.html'
@@ -48,7 +61,7 @@ class ProductDetailView(DetailView):
     model = Product
 
 
-class ProductUpdateView(UpdateView):
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
     model = Product
     form_class = ProductForm
 
@@ -75,6 +88,6 @@ class ProductUpdateView(UpdateView):
         return super().form_valid(form)
 
 
-class ProductDeleteView(DeleteView):
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product
     success_url = reverse_lazy('home')
